@@ -35,6 +35,12 @@ import java.io.File;
 import java.util.List;
 
 public class MainFrame extends JFrame {
+	
+	//========================
+	// Current Project
+	//========================
+
+	private Integer currentProjectId = null;
 
     //========================
     // TextField
@@ -441,7 +447,48 @@ public class MainFrame extends JFrame {
         btnLoad.addActionListener(e -> loadProject());
 
         btnExport.addActionListener(e -> exportReadme());
+        
+        tableProject.getSelectionModel()
+        .addListSelectionListener(e -> {
 
+
+            if(e.getValueIsAdjusting()){
+                return;
+            }
+
+
+            int row =
+                    tableProject.getSelectedRow();
+
+
+            if(row == -1){
+                return;
+            }
+
+
+            Object value =
+                    tableModel.getValueAt(row,0);
+
+
+            currentProjectId =
+                    Integer.parseInt(value.toString());
+
+
+
+            ProjectInfo p =
+                    projectService.findById(
+                            currentProjectId
+                    );
+
+
+            if(p != null){
+
+                setProjectToUI(p);
+
+            }
+
+
+        });
     }
     
     private void generateReadme() {
@@ -600,6 +647,154 @@ public class MainFrame extends JFrame {
 
     }
     
+    private void updateProject(){
+
+
+        if(currentProjectId == null){
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "請先選擇專案"
+            );
+
+            return;
+        }
+
+
+        ProjectInfo project =
+                getProjectFromUI();
+
+
+        project.setId(currentProjectId);
+
+
+        boolean result =
+                projectService.update(project);
+
+
+
+        if(result){
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "修改成功"
+            );
+
+
+            refreshProjectTable();
+
+
+        }else{
+
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "修改失敗"
+            );
+
+        }
+
+    }
+    
+    private void deleteProject(){
+
+
+        if(currentProjectId == null){
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "請先選擇專案"
+            );
+
+            return;
+        }
+
+
+        int confirm =
+                JOptionPane.showConfirmDialog(
+                        this,
+                        "確定刪除？",
+                        "Delete",
+                        JOptionPane.YES_NO_OPTION
+                );
+
+
+        if(confirm != JOptionPane.YES_OPTION){
+
+            return;
+
+        }
+
+
+
+        boolean result =
+                projectService.delete(currentProjectId);
+
+
+
+        if(result){
+
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "刪除成功"
+            );
+
+
+            currentProjectId = null;
+
+
+            clearInput();
+
+
+            refreshProjectTable();
+
+
+        }
+
+    }
+      
+    private void setProjectToUI(ProjectInfo p){
+
+        txtProjectName.setText(p.getProjectName());
+
+        txtAuthor.setText(p.getAuthor());
+
+        txtVersion.setText(p.getVersion());
+
+        txtGithub.setText(p.getGithubUrl());
+
+        txtDescription.setText(p.getDescription());
+
+        txtFeatures.setText(p.getFeatures());
+
+        txtInstallation.setText(p.getInstallation());
+
+        txtUsage.setText(p.getUsage());
+
+    }
+    
+    private void clearInput(){
+
+
+        txtProjectName.setText("");
+
+        txtAuthor.setText("");
+
+        txtVersion.setText("");
+
+        txtGithub.setText("");
+
+        txtDescription.setText("");
+
+        txtFeatures.setText("");
+
+        txtInstallation.setText("");
+
+        txtUsage.setText("");
+
+
+    }
 
     //========================
     // Main
