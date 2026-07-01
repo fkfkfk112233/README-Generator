@@ -9,6 +9,10 @@ public class TemplateEngine {
     public static String loadTemplate(String templateName) {
 
         String fileName = "template/" + templateName + ".md";
+        
+        System.out.println(
+                "讀取：" + fileName
+            );
 
         try (InputStream is = TemplateEngine.class
                 .getClassLoader()
