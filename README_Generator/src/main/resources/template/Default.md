@@ -31,3 +31,11 @@ ${usage}
 ## Author
 
 ${author}
+
+## Version
+
+${version}
+
+## GitHub
+
+${github}
