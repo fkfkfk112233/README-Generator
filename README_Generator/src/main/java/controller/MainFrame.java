@@ -18,7 +18,10 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.JTextComponent;
 
 import model.ProjectInfo;
 import service.ProjectService;
@@ -27,6 +30,7 @@ import service.impl.ProjectServiceImpl;
 import service.impl.ReadmeServiceImpl;
 
 import util.FileUtil;
+import util.TemplateUtil;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -224,11 +228,9 @@ public class MainFrame extends JFrame {
 
         cmbTemplate = new JComboBox<>();
 
-        cmbTemplate.addItem("Default");
-
-        cmbTemplate.addItem("Professional");
-
-        cmbTemplate.addItem("Minimal");
+        TemplateUtil
+        	.getTemplates()
+        	.forEach(cmbTemplate::addItem);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
@@ -447,61 +449,74 @@ public class MainFrame extends JFrame {
         btnLoad.addActionListener(e -> loadProject());
 
         btnExport.addActionListener(e -> exportReadme());
-        
-        tableProject.getSelectionModel()
-        .addListSelectionListener(e -> {
 
+        addAutoPreview(txtProjectName);
+        addAutoPreview(txtAuthor);
+        addAutoPreview(txtVersion);
+        addAutoPreview(txtGithub);
 
-            if(e.getValueIsAdjusting()){
+        addAutoPreview(txtDescription);
+        addAutoPreview(txtFeatures);
+        addAutoPreview(txtInstallation);
+        addAutoPreview(txtUsage);
+
+        cmbTemplate.addActionListener(e -> refreshPreview());
+
+    }
+    
+    private void refreshPreview() {
+
+        try {
+
+            ProjectInfo project = getProjectFromUI();
+
+            String template =
+                    (String) cmbTemplate.getSelectedItem();
+
+            if (template == null) {
                 return;
             }
 
+            String markdown =
+                    readmeService.generate(project, template);
 
-            int row =
-                    tableProject.getSelectedRow();
+            txtPreview.setText(markdown);
 
+        } catch (Exception e) {
 
-            if(row == -1){
-                return;
+            // 使用者輸入過程中，不要一直跳錯誤視窗
+            txtPreview.setText("");
+
+        }
+
+    }
+    
+    private void addAutoPreview(JTextComponent component) {
+
+        component.getDocument().addDocumentListener(new DocumentListener() {
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshPreview();
             }
 
-
-            Object value =
-                    tableModel.getValueAt(row,0);
-
-
-            currentProjectId =
-                    Integer.parseInt(value.toString());
-
-
-
-            ProjectInfo p =
-                    projectService.findById(
-                            currentProjectId
-                    );
-
-
-            if(p != null){
-
-                setProjectToUI(p);
-
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshPreview();
             }
 
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshPreview();
+            }
 
         });
+
     }
     
     private void generateReadme() {
 
-        ProjectInfo project = getProjectFromUI();
-
-        String template = cmbTemplate.getSelectedItem().toString();
-
-        String markdown =
-                readmeService.generate(project, template);
-
-        txtPreview.setText(markdown);
-
+    	refreshPreview();
     }
     
     private void saveProject() {
